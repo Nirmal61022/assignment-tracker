@@ -501,8 +501,11 @@ def health_check(request):
     })
 
 
+from django.views.decorators.csrf import csrf_exempt
+
 # ─────────────────────── AI Assistant APIs ────────────────────────────
 
+@csrf_exempt
 @require_POST
 def api_chat(request):
     """
@@ -554,6 +557,7 @@ def api_chat(request):
     return JsonResponse(result)
 
 
+@csrf_exempt
 @require_POST
 def api_ticket_create(request):
     """
@@ -645,6 +649,7 @@ def ticket_list(request):
     return render(request, 'tracker/ticket_list.html', {'tickets': tickets})
 
 
+@csrf_exempt
 @require_POST
 def api_feedback(request):
     """Save assistant feedback (thumbs up/down) to MongoDB."""

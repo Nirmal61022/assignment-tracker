@@ -694,7 +694,7 @@ def custom_500_view(request):
 
 def test_404_view(request):
     """Test endpoint to demonstrate the custom 404 page."""
-    raise Http404("This is a demonstration 404 error page.")
+    return custom_404_view(request)
 
 
 def test_500_view(request):

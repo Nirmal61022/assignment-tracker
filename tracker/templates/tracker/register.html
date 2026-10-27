@@ -1,0 +1,90 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register – Assignment Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'tracker/css/style.css' %}">
+</head>
+<body>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">📚</div>
+    </div>
+    <h1 class="auth-title">Create Account</h1>
+    <p class="auth-subtitle">Start tracking your assignments today</p>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          {{ form.first_name }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          {{ form.last_name }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.username.id_for_label }}">
+          Username <span class="required">*</span>
+        </label>
+        {{ form.username }}
+        {% if form.username.errors %}
+        <div class="form-error">⚠️ {{ form.username.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.email.id_for_label }}">
+          Email <span class="required">*</span>
+        </label>
+        {{ form.email }}
+        {% if form.email.errors %}
+        <div class="form-error">⚠️ {{ form.email.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.password1.id_for_label }}">
+          Password <span class="required">*</span>
+        </label>
+        {{ form.password1 }}
+        {% if form.password1.errors %}
+        <div class="form-error">⚠️ {{ form.password1.errors|join:", " }}</div>
+        {% endif %}
+        <div class="form-hint">At least 8 characters. Not too similar to username.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.password2.id_for_label }}">
+          Confirm Password <span class="required">*</span>
+        </label>
+        {{ form.password2 }}
+        {% if form.password2.errors %}
+        <div class="form-error">⚠️ {{ form.password2.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px">
+        Create Account →
+      </button>
+    </form>
+
+    <div style="text-align:center;margin-top:24px;font-size:14px;color:var(--gray-600)">
+      Already have an account? <a href="{% url 'login' %}">Sign in →</a>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'tracker/js/app.js' %}"></script>
+</body>
+</html>

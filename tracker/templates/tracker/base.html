@@ -1,0 +1,136 @@
+{% load static tracker_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{% block title %}Assignment Tracker{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'tracker/css/style.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body data-page="{% block page_name %}{% endblock %}">
+
+  <div class="app-wrapper">
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">📚</div>
+        <div>
+          <div class="logo-text">Assignment Tracker</div>
+          <div class="logo-sub">Student Dashboard</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+        <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+          <span class="nav-icon">🏠</span> Dashboard
+        </a>
+        <a href="{% url 'assignment_list' %}" class="nav-item {% if 'assignment' in request.resolver_match.url_name %}active{% endif %}">
+          <span class="nav-icon">📝</span> Assignments
+        </a>
+        <a href="{% url 'assignment_create' %}" class="nav-item {% if request.resolver_match.url_name == 'assignment_create' %}active{% endif %}">
+          <span class="nav-icon">➕</span> Add Assignment
+        </a>
+
+        <div class="nav-section-label">Organize</div>
+        <a href="{% url 'subject_list' %}" class="nav-item {% if 'subject' in request.resolver_match.url_name %}active{% endif %}">
+          <span class="nav-icon">📖</span> Subjects
+        </a>
+        <a href="{% url 'calendar' %}" class="nav-item {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">
+          <span class="nav-icon">📅</span> Calendar
+        </a>
+
+        <div class="nav-section-label">Account</div>
+        <a href="{% url 'profile' %}" class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+          <span class="nav-icon">👤</span> Profile
+        </a>
+        <a href="{% url 'logout' %}" class="nav-item">
+          <span class="nav-icon">🚪</span> Logout
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+          <div class="user-info">
+            <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+            <div class="user-role">Student</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Mobile Header -->
+      <div class="mobile-header">
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle menu">☰</button>
+        <span style="font-weight:700;color:var(--gray-900)">📚 Assignment Tracker</span>
+        <a href="{% url 'assignment_create' %}" class="btn btn-primary btn-sm">+ New</a>
+      </div>
+
+      <!-- Page Header -->
+      {% block page_header %}{% endblock %}
+
+      <!-- Main Body -->
+      <div class="page-body">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast container -->
+  <div class="messages-container" id="messages-container">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}" data-auto-dismiss>
+        <span class="alert-icon">
+          {% if message.tags == 'success' %}✓{% elif message.tags == 'error' or message.tags == 'danger' %}✕{% elif message.tags == 'warning' %}⚠{% else %}ℹ{% endif %}
+        </span>
+        <div class="alert-content">
+          <span class="alert-text">{{ message }}</span>
+        </div>
+        <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+      <div class="modal-title">⚠️ Confirm Delete</div>
+      <div class="modal-text">Are you sure you want to delete <strong id="delete-item-name"></strong>? This action cannot be undone.</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('delete-modal')">Cancel</button>
+        <form id="delete-form" method="post" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="{% static 'tracker/js/app.js' %}"></script>
+
+  <script>
+    // Wire up delete buttons
+    document.querySelectorAll('[data-delete-action]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.getElementById('delete-item-name').textContent = btn.dataset.title || 'this item';
+        document.getElementById('delete-form').action = btn.dataset.deleteAction;
+        openModal('delete-modal');
+      });
+    });
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

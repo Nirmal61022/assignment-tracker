@@ -1,0 +1,160 @@
+{% extends 'tracker/base.html' %}
+{% load tracker_tags %}
+
+{% block title %}Dashboard – Assignment Tracker{% endblock %}
+{% block page_name %}dashboard{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Dashboard</div>
+    <div class="page-subtitle">Welcome back, {{ request.user.get_full_name|default:request.user.username }}!</div>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'assignment_create' %}" class="btn btn-primary">
+      ➕ <span class="btn-text-hide">Add Assignment</span>
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if not has_assignments %}
+<!-- Empty State -->
+<div class="empty-state" style="margin-top:40px">
+  <div class="empty-state-icon">📚</div>
+  <div class="empty-state-title">No assignments yet</div>
+  <div class="empty-state-text">Get started by adding your first assignment. Track deadlines, manage subjects, and stay organized!</div>
+  <a href="{% url 'assignment_create' %}" class="btn btn-primary btn-lg">➕ Add Your First Assignment</a>
+</div>
+{% else %}
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon purple">📋</div>
+    <div class="stat-body">
+      <div class="stat-label">Total</div>
+      <div class="stat-value">{{ total }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange">⏳</div>
+    <div class="stat-body">
+      <div class="stat-label">Pending</div>
+      <div class="stat-value">{{ pending_count }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green">✅</div>
+    <div class="stat-body">
+      <div class="stat-label">Submitted</div>
+      <div class="stat-value">{{ submitted }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red">🚨</div>
+    <div class="stat-body">
+      <div class="stat-label">Overdue</div>
+      <div class="stat-value">{{ overdue_count }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Grid -->
+<div class="dashboard-grid">
+
+  <!-- Chart -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📊 Status Overview</div>
+    </div>
+    <div class="chart-container">
+      <canvas id="status-chart"></canvas>
+    </div>
+    <script id="chart-data" type="application/json">{{ chart_data|safe }}</script>
+  </div>
+
+  <!-- Due Soon -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">⏰ Due Soon (48h)</div>
+      <a href="{% url 'calendar' %}" class="btn btn-ghost btn-sm">View all →</a>
+    </div>
+    {% if due_soon %}
+      {% for a in due_soon %}
+      <div class="due-soon-item">
+        <div class="due-soon-date {% if a.is_overdue %}overdue-date{% endif %}">
+          <div class="due-soon-day">{{ a.due_date|date:"d" }}</div>
+          <div class="due-soon-month">{{ a.due_date|date:"M" }}</div>
+        </div>
+        <div class="due-soon-info">
+          <div class="due-soon-title">
+            <a href="{% url 'assignment_detail' a.pk %}" style="color:inherit;text-decoration:none">{{ a.title }}</a>
+          </div>
+          <div class="due-soon-subject">{{ a.subject.name }}</div>
+        </div>
+        <span class="badge badge-orange">Due soon</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="text-muted text-small" style="padding:12px 0">🎉 No assignments due in the next 48 hours!</div>
+    {% endif %}
+  </div>
+
+  <!-- Upcoming Deadlines -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📅 Upcoming (7 days)</div>
+      <a href="{% url 'assignment_list' %}?sort=due_date" class="btn btn-ghost btn-sm">View all →</a>
+    </div>
+    {% if upcoming %}
+      {% for a in upcoming %}
+      <div class="due-soon-item">
+        <div class="due-soon-date">
+          <div class="due-soon-day">{{ a.due_date|date:"d" }}</div>
+          <div class="due-soon-month">{{ a.due_date|date:"M" }}</div>
+        </div>
+        <div class="due-soon-info">
+          <div class="due-soon-title">
+            <a href="{% url 'assignment_detail' a.pk %}" style="color:inherit;text-decoration:none">{{ a.title }}</a>
+          </div>
+          <div class="due-soon-subject">{{ a.subject.name }} · <span class="badge badge-gray" style="font-size:10px">{{ a.get_priority_display }}</span></div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="text-muted text-small" style="padding:12px 0">No upcoming assignments in the next 7 days.</div>
+    {% endif %}
+  </div>
+
+  <!-- Recent Assignments -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🕒 Recently Added</div>
+      <a href="{% url 'assignment_list' %}" class="btn btn-ghost btn-sm">View all →</a>
+    </div>
+    {% if recent %}
+      {% for a in recent %}
+      <div class="due-soon-item">
+        <div class="due-soon-info">
+          <div class="due-soon-title">
+            <a href="{% url 'assignment_detail' a.pk %}" style="color:inherit;text-decoration:none">{{ a.title }}</a>
+          </div>
+          <div class="due-soon-subject">{{ a.subject.name }} · Due {{ a.due_date|date:"M d" }}</div>
+        </div>
+        <span class="badge {% if a.is_overdue %}badge-red status-overdue{% elif a.status == 'submitted' %}badge-green status-submitted{% elif a.status == 'in_progress' %}badge-blue status-in-progress{% else %}badge-orange status-pending{% endif %}">
+          {% if a.is_overdue %}Overdue{% else %}{{ a.get_status_display }}{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="text-muted text-small" style="padding:12px 0">No recent assignments.</div>
+    {% endif %}
+  </div>
+
+</div>
+{% endif %}
+
+{% endblock %}

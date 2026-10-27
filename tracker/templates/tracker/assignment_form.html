@@ -1,0 +1,142 @@
+{% extends 'tracker/base.html' %}
+{% load tracker_tags %}
+
+{% block title %}{{ action }} Assignment – Assignment Tracker{% endblock %}
+{% block page_name %}{% if assignment %}edit{% else %}create{% endif %}{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ action }} Assignment</div>
+    <div class="breadcrumb">
+      <a href="{% url 'assignment_list' %}">Assignments</a>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current">{{ action }}</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:680px">
+
+  {% if not subjects %}
+  <div style="background:var(--warning-bg);border:1px solid var(--warning);border-radius:var(--border-radius-sm);padding:14px 16px;margin-bottom:20px">
+    ⚠️ You need to <a href="{% url 'subject_list' %}">add a subject</a> before creating an assignment.
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <!-- Non-field errors -->
+      {% if form.non_field_errors %}
+      <div style="background:var(--danger-bg);border:1px solid var(--danger);border-radius:var(--border-radius-sm);padding:12px;margin-bottom:16px">
+        {% for error in form.non_field_errors %}
+        <div style="color:var(--danger);font-size:14px">⚠️ {{ error }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Title -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.title.id_for_label }}">
+          Title <span class="required">*</span>
+        </label>
+        {{ form.title }}
+        {% if form.title.errors %}
+        <div class="form-error">⚠️ {{ form.title.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Subject -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.subject.id_for_label }}">
+          Subject <span class="required">*</span>
+        </label>
+        {{ form.subject }}
+        {% if form.subject.errors %}
+        <div class="form-error">⚠️ {{ form.subject.errors|join:", " }}</div>
+        {% endif %}
+        <div class="form-hint">
+          Don't see your subject? <a href="{% url 'subject_list' %}" target="_blank">Add a new subject</a>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+        {{ form.description }}
+        {% if form.description.errors %}
+        <div class="form-error">⚠️ {{ form.description.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Due Date & Time -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.due_date.id_for_label }}">
+            Due Date <span class="required">*</span>
+          </label>
+          {{ form.due_date }}
+          {% if form.due_date.errors %}
+          <div class="form-error">⚠️ {{ form.due_date.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.due_time.id_for_label }}">Due Time</label>
+          {{ form.due_time }}
+          <div class="form-hint">Optional — end of day assumed if omitted</div>
+          {% if form.due_time.errors %}
+          <div class="form-error">⚠️ {{ form.due_time.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Priority & Status -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.priority.id_for_label }}">Priority</label>
+          {{ form.priority }}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.status.id_for_label }}">Status</label>
+          {{ form.status }}
+          <div id="submitted-notice" style="display:none;margin-top:6px;padding:8px 12px;background:var(--success-bg);border-radius:6px;font-size:13px;color:var(--success)">
+            ✅ Submission time will be recorded automatically.
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.notes.id_for_label }}">Notes</label>
+        {{ form.notes }}
+        {% if form.notes.errors %}
+        <div class="form-error">⚠️ {{ form.notes.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex;gap:12px;padding-top:8px">
+        <button type="submit" class="btn btn-primary">
+          {% if assignment %}💾 Update Assignment{% else %}➕ Create Assignment{% endif %}
+        </button>
+        <a href="{% if assignment %}{% url 'assignment_detail' assignment.pk %}{% else %}{% url 'assignment_list' %}{% endif %}" class="btn btn-secondary">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if assignment.status == 'submitted' %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const notice = document.getElementById('submitted-notice');
+    if (notice) notice.style.display = 'block';
+  });
+</script>
+{% endif %}
+{% endblock %}

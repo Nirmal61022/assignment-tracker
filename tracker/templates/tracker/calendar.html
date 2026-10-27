@@ -1,0 +1,101 @@
+{% extends 'tracker/base.html' %}
+{% load tracker_tags %}
+
+{% block title %}Calendar – Assignment Tracker{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+  <div>
+    <div class="page-title">📅 Deadlines Calendar</div>
+    <div class="page-subtitle">Upcoming and overdue assignments</div>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'assignment_create' %}" class="btn btn-primary">➕ Add Assignment</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if overdue %}
+<div style="margin-bottom:24px">
+  <div class="section-title" style="color:var(--danger)">🚨 Overdue Assignments</div>
+  <div class="deadline-list">
+    {% for a in overdue %}
+    <div class="deadline-item overdue-item">
+      <div class="deadline-date-badge overdue-badge">
+        <div class="day-num">{{ a.due_date|date:"d" }}</div>
+        <div class="month-name">{{ a.due_date|date:"M" }}</div>
+      </div>
+      <div class="deadline-info">
+        <div class="deadline-title">
+          <a href="{% url 'assignment_detail' a.pk %}" style="color:inherit;text-decoration:none">{{ a.title }}</a>
+        </div>
+        <div class="deadline-subject">
+          {{ a.subject.name }} ·
+          <span class="badge {% if a.priority == 'high' %}badge-red{% elif a.priority == 'medium' %}badge-orange{% else %}badge-green{% endif %}" style="font-size:10px">{{ a.get_priority_display }}</span>
+          · Was due {{ a.due_date|date:"M d, Y" }}{% if a.due_time %} at {{ a.due_time|time:"g:i A" }}{% endif %}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <form method="post" action="{% url 'assignment_submit' a.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'calendar' %}">
+          <button type="submit" class="btn btn-success btn-sm">✅ Submit</button>
+        </form>
+        <a href="{% url 'assignment_edit' a.pk %}" class="btn btn-secondary btn-sm">✏️ Edit</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="section-title">📋 Upcoming Deadlines</div>
+{% if upcoming %}
+<div class="deadline-list">
+  {% for a in upcoming %}
+  {% with days=a.due_date|days_until_filter %}
+  <div class="deadline-item {% if a.due_soon %}due-soon-item-row{% endif %}">
+    <div class="deadline-date-badge {% if a.due_soon %}soon-badge{% endif %}">
+      <div class="day-num">{{ a.due_date|date:"d" }}</div>
+      <div class="month-name">{{ a.due_date|date:"M" }}</div>
+    </div>
+    <div class="deadline-info">
+      <div class="deadline-title">
+        <a href="{% url 'assignment_detail' a.pk %}" style="color:inherit;text-decoration:none">{{ a.title }}</a>
+      </div>
+      <div class="deadline-subject">
+        {{ a.subject.name }} ·
+        <span class="badge {% if a.priority == 'high' %}badge-red{% elif a.priority == 'medium' %}badge-orange{% else %}badge-green{% endif %}" style="font-size:10px">{{ a.get_priority_display }}</span>
+        ·
+        {% if days == 0 %}
+          <strong style="color:var(--danger)">Due today!</strong>
+        {% elif days == 1 %}
+          <strong style="color:var(--warning)">Due tomorrow</strong>
+        {% else %}
+          {{ days }} days away
+        {% endif %}
+        {% if a.due_time %} at {{ a.due_time|time:"g:i A" }}{% endif %}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      {% if a.due_soon %}
+      <span class="badge badge-orange">⚠️ Due Soon</span>
+      {% endif %}
+      <a href="{% url 'assignment_detail' a.pk %}" class="btn btn-ghost btn-sm">View →</a>
+    </div>
+  </div>
+  {% endwith %}
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-state-icon">🎉</div>
+  <div class="empty-state-title">All clear!</div>
+  <div class="empty-state-text">No upcoming assignments. Enjoy your free time or add new ones!</div>
+  <a href="{% url 'assignment_create' %}" class="btn btn-primary">➕ Add Assignment</a>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends 'tracker/base.html' %}
+{% load tracker_tags %}
+
+{% block title %}Assignments – Assignment Tracker{% endblock %}
+{% block page_name %}list{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+  <div>
+    <div class="page-title">All Assignments</div>
+    <div class="page-subtitle">{{ total_count }} assignment{{ total_count|pluralize }} found</div>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'assignment_create' %}" class="btn btn-primary">➕ New Assignment</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Filter Bar -->
+<form id="filter-form" method="get" action="">
+  <div class="filter-bar">
+    <div class="search-input-wrapper" style="flex:1;min-width:200px">
+      <span class="search-icon">🔍</span>
+      <input type="text" name="q" id="search-input" class="form-input" placeholder="Search assignments…" value="{{ search }}">
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Subject</label>
+      <select name="subject" class="form-input filter-select-auto">
+        <option value="">All Subjects</option>
+        {% for subj in subjects %}
+        <option value="{{ subj.pk }}" {% if selected_subject == subj.pk|stringformat:"s" %}selected{% endif %}>{{ subj.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Status</label>
+      <select name="status" class="form-input filter-select-auto">
+        <option value="">All Status</option>
+        <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="in_progress" {% if selected_status == 'in_progress' %}selected{% endif %}>In Progress</option>
+        <option value="submitted" {% if selected_status == 'submitted' %}selected{% endif %}>Submitted</option>
+        <option value="overdue" {% if selected_status == 'overdue' %}selected{% endif %}>Overdue</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Priority</label>
+      <select name="priority" class="form-input filter-select-auto">
+        <option value="">All Priority</option>
+        <option value="high" {% if selected_priority == 'high' %}selected{% endif %}>High</option>
+        <option value="medium" {% if selected_priority == 'medium' %}selected{% endif %}>Medium</option>
+        <option value="low" {% if selected_priority == 'low' %}selected{% endif %}>Low</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Sort by</label>
+      <select name="sort" class="form-input filter-select-auto">
+        <option value="due_date" {% if current_sort == 'due_date' %}selected{% endif %}>Due Date ↑</option>
+        <option value="-due_date" {% if current_sort == '-due_date' %}selected{% endif %}>Due Date ↓</option>
+        <option value="title" {% if current_sort == 'title' %}selected{% endif %}>Title A-Z</option>
+        <option value="-title" {% if current_sort == '-title' %}selected{% endif %}>Title Z-A</option>
+        <option value="priority" {% if current_sort == 'priority' %}selected{% endif %}>Priority</option>
+        <option value="created" {% if current_sort == 'created' %}selected{% endif %}>Recently Added</option>
+      </select>
+    </div>
+
+    {% if search or selected_subject or selected_status or selected_priority %}
+    <a href="{% url 'assignment_list' %}" class="btn btn-secondary btn-sm">✕ Clear</a>
+    {% endif %}
+  </div>
+</form>
+
+{% if page_obj.object_list %}
+<!-- Assignment Cards Grid -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:20px">
+  {% for a in page_obj %}
+  <div class="assignment-card priority-{{ a.priority }}">
+    <div class="assignment-card-header">
+      <a href="{% url 'assignment_detail' a.pk %}" class="assignment-title">{{ a.title }}</a>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <a href="{% url 'assignment_edit' a.pk %}" class="btn btn-ghost btn-icon btn-sm" title="Edit">✏️</a>
+        <button class="btn btn-ghost btn-icon btn-sm" title="Delete"
+          data-delete-action="{% url 'assignment_delete' a.pk %}"
+          data-title="{{ a.title }}">🗑️</button>
+      </div>
+    </div>
+
+    <div class="assignment-meta">
+      <span title="Subject">📖 {{ a.subject.name }}</span>
+      <span title="Due date">📅 {{ a.due_date|date:"M d, Y" }}{% if a.due_time %} {{ a.due_time|time:"g:i A" }}{% endif %}</span>
+    </div>
+
+    {% if a.description %}
+    <p style="font-size:13px;color:var(--gray-600);margin-bottom:10px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">
+      {{ a.description }}
+    </p>
+    {% endif %}
+
+    <div class="assignment-actions">
+      <span class="badge {% if a.is_overdue %}badge-red{% elif a.status == 'submitted' %}badge-green{% elif a.status == 'in_progress' %}badge-blue{% else %}badge-orange{% endif %}">
+        {% if a.is_overdue %}🚨 Overdue{% elif a.status == 'submitted' %}✅ Submitted{% elif a.status == 'in_progress' %}🔄 In Progress{% else %}⏳ Pending{% endif %}
+      </span>
+      <span class="badge {% if a.priority == 'high' %}badge-red{% elif a.priority == 'medium' %}badge-orange{% else %}badge-green{% endif %}">
+        {{ a.get_priority_display }} Priority
+      </span>
+      {% if a.due_soon %}
+      <span class="badge badge-orange">⚠️ Due Soon</span>
+      {% endif %}
+    </div>
+
+    {% if a.status != 'submitted' %}
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-100)">
+      <form method="post" action="{% url 'assignment_submit' a.pk %}" style="display:inline">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="btn btn-success btn-sm">✅ Mark Submitted</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+  {% if page_obj.has_previous %}
+    <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="page-link">← Prev</a>
+  {% endif %}
+  {% for num in page_obj.paginator.page_range %}
+    {% if page_obj.number == num %}
+      <span class="page-link active">{{ num }}</span>
+    {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+      <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ num }}" class="page-link">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+  {% if page_obj.has_next %}
+    <a href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="page-link">Next →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+  <div class="empty-state-icon">📭</div>
+  <div class="empty-state-title">No assignments found</div>
+  <div class="empty-state-text">
+    {% if search or selected_subject or selected_status or selected_priority %}
+    Try adjusting your search or filters.
+    <br><a href="{% url 'assignment_list' %}">Clear all filters</a>
+    {% else %}
+    Start by adding your first assignment!
+    {% endif %}
+  </div>
+  {% if not search and not selected_subject and not selected_status %}
+  <a href="{% url 'assignment_create' %}" class="btn btn-primary">➕ Add Assignment</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

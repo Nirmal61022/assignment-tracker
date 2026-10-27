@@ -1,0 +1,101 @@
+{% extends 'tracker/base.html' %}
+
+{% block title %}Subjects – Assignment Tracker{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Subjects</div>
+    <div class="page-subtitle">Manage your courses and subjects</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start">
+
+  <!-- Left: Subject List -->
+  <div>
+    {% if subjects %}
+    <div class="subjects-grid">
+      {% for subj in subjects %}
+      <div class="subject-card">
+        <div class="subject-color-dot" style="background-color:{{ subj.color }}"></div>
+        <div class="subject-info">
+          <div class="subject-name">{{ subj.name }}</div>
+          <div class="subject-count">
+            {{ subj.total_assignments }} assignment{{ subj.total_assignments|pluralize }}
+          </div>
+          {% if subj.description %}
+          <div style="font-size:12px;color:var(--gray-500);margin-top:2px">{{ subj.description|truncatechars:60 }}</div>
+          {% endif %}
+        </div>
+        <div class="subject-actions">
+          <a href="{% url 'subject_edit' subj.pk %}" class="btn btn-ghost btn-icon btn-sm" title="Edit">✏️</a>
+          <button class="btn btn-ghost btn-icon btn-sm" title="Delete"
+            data-delete-action="{% url 'subject_delete' subj.pk %}"
+            data-title="{{ subj.name }}">🗑️</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">📖</div>
+      <div class="empty-state-title">No subjects yet</div>
+      <div class="empty-state-text">Add your first subject using the form on the right.</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right: Add / Edit Form -->
+  <div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px">
+        {% if edit_subject %}✏️ Edit Subject{% else %}➕ Add Subject{% endif %}
+      </div>
+      <form method="post" action="{% if edit_subject %}{% url 'subject_edit' edit_subject.pk %}{% else %}{% url 'subject_create' %}{% endif %}" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label class="form-label" for="{{ form.name.id_for_label }}">
+            Name <span class="required">*</span>
+          </label>
+          {{ form.name }}
+          {% if form.name.errors %}
+          <div class="form-error">⚠️ {{ form.name.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+          {{ form.description }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="{{ form.color.id_for_label }}">Color</label>
+          {{ form.color }}
+          <div class="form-hint">Choose a color to identify this subject</div>
+        </div>
+
+        <div style="display:flex;gap:10px">
+          <button type="submit" class="btn btn-primary">
+            {% if edit_subject %}💾 Save Changes{% else %}➕ Add Subject{% endif %}
+          </button>
+          {% if edit_subject %}
+          <a href="{% url 'subject_list' %}" class="btn btn-secondary">Cancel</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+
+    {% if edit_subject %}
+    <div style="margin-top:12px">
+      <a href="{% url 'subject_list' %}" class="btn btn-ghost btn-sm">← Back to list</a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

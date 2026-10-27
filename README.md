@@ -4,6 +4,10 @@ A complete full-stack web application for college students to organize assignmen
 
 Built with **Django 6**, **SQLite** (local), **PostgreSQL** (production), and a responsive vanilla CSS/JS frontend.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Nirmal61022/assignment-tracker)
+
+**GitHub Repository:** [https://github.com/Nirmal61022/assignment-tracker](https://github.com/Nirmal61022/assignment-tracker)
+
 ---
 
 ## ✨ Features

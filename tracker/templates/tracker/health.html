@@ -1,0 +1,212 @@
+{% extends 'tracker/base.html' %}
+
+{% block title %}System Health & Monitoring – Assignment Tracker{% endblock %}
+{% block page_name %}health{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+  <div>
+    <div class="page-title">🩺 System Health & Service Diagnostics</div>
+    <div class="page-subtitle">Real-time status of SQL Database, MongoDB, Third-Party APIs, and HTTP Request Logging</div>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'health_check' %}?format=json" class="btn btn-secondary btn-sm" target="_blank">
+      ⚡ Raw JSON API
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="health-container">
+
+  <!-- Overall Status Banner -->
+  <div class="card" style="margin-bottom:24px;background:{% if status == 'healthy' %}rgba(16,185,129,0.08){% elif status == 'degraded' %}rgba(245,158,11,0.08){% else %}rgba(239,68,68,0.08){% endif %};border:1px solid {% if status == 'healthy' %}rgba(16,185,129,0.3){% elif status == 'degraded' %}rgba(245,158,11,0.3){% else %}rgba(239,68,68,0.3){% endif %};display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div style="width:48px;height:48px;border-radius:50%;background:{% if status == 'healthy' %}#10b981{% elif status == 'degraded' %}#f59e0b{% else %}#ef4444{% endif %};color:white;display:flex;align-items:center;justify-content:center;font-size:24px;">
+        {% if status == 'healthy' %}✓{% elif status == 'degraded' %}!{% else %}✕{% endif %}
+      </div>
+      <div>
+        <h2 style="font-size:18px;font-weight:700;color:var(--gray-900);text-transform:capitalize;">
+          System Status: {{ status }}
+        </h2>
+        <p style="font-size:13px;color:var(--gray-600);margin:2px 0 0 0;">
+          Diagnostics completed in {{ data.duration_ms }} ms • Server time: {{ data.timestamp }}
+        </p>
+      </div>
+    </div>
+    <span class="badge {% if status == 'healthy' %}badge-green{% elif status == 'degraded' %}badge-orange{% else %}badge-red{% endif %}" style="font-size:13px;padding:6px 14px;">
+      {{ status|upper }}
+    </span>
+  </div>
+
+  <!-- Service Status Cards Grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:20px;margin-bottom:28px;">
+
+    <!-- 1. SQL Database Card -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">🗄️</span>
+          <h3 style="font-size:16px;font-weight:700;color:var(--gray-900);">SQL Database</h3>
+        </div>
+        <span class="badge {% if data.checks.database_sql.status == 'healthy' %}badge-green{% else %}badge-red{% endif %}">
+          {{ data.checks.database_sql.status|upper }}
+        </span>
+      </div>
+      <div style="font-size:13px;color:var(--gray-600);display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span>Engine:</span>
+          <strong style="color:var(--gray-800);">{{ data.checks.database_sql.engine|default:"SQLite"|title }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Query Latency:</span>
+          <strong style="color:var(--gray-800);">{{ data.checks.database_sql.latency_ms }} ms</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Active Assignments:</span>
+          <strong style="color:var(--gray-800);">{{ data.checks.database_sql.assignments_count }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>FAQs Stored in SQL:</span>
+          <strong style="color:var(--gray-800);">{{ data.checks.database_sql.faqs_count }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Error Codes Catalog:</span>
+          <strong style="color:var(--gray-800);">{{ data.checks.database_sql.error_codes_count }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Support Tickets:</span>
+          <strong style="color:var(--gray-800);">{{ data.checks.database_sql.tickets_count }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. MongoDB Card -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">🍃</span>
+          <h3 style="font-size:16px;font-weight:700;color:var(--gray-900);">MongoDB (Chat & Feedback)</h3>
+        </div>
+        <span class="badge {% if data.checks.mongodb.status == 'healthy' %}badge-green{% elif data.checks.mongodb.status == 'degraded' %}badge-orange{% else %}badge-blue{% endif %}">
+          {{ data.checks.mongodb.status|upper }}
+        </span>
+      </div>
+      <div style="font-size:13px;color:var(--gray-600);display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span>Connection Mode:</span>
+          <strong style="color:var(--gray-800);">
+            {% if data.checks.mongodb.connected %}MongoDB Atlas / Live{% else %}Resilient Local Buffer{% endif %}
+          </strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Chat Logs Stored:</span>
+          <strong style="color:var(--gray-800);">{{ data.checks.mongodb.chat_logs_count }} messages</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Feedback Submissions:</span>
+          <strong style="color:var(--gray-800);">{{ data.checks.mongodb.feedback_count }} ratings</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Database Name:</span>
+          <strong style="color:var(--gray-800);">{{ data.checks.mongodb.database|default:"assignment_tracker" }}</strong>
+        </div>
+        {% if data.checks.mongodb.latency_ms %}
+        <div style="display:flex;justify-content:space-between;">
+          <span>Ping Latency:</span>
+          <strong style="color:var(--gray-800);">{{ data.checks.mongodb.latency_ms }} ms</strong>
+        </div>
+        {% endif %}
+        <div style="margin-top:4px;padding:8px;background:var(--gray-50);border-radius:6px;font-size:12px;color:var(--gray-500);">
+          {{ data.checks.mongodb.message|default:"MongoDB active for persistent chat auditing." }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Third-Party API Card (with Timeout & Fallback) -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">🌐</span>
+          <h3 style="font-size:16px;font-weight:700;color:var(--gray-900);">Third-Party Quote API</h3>
+        </div>
+        <span class="badge {% if data.checks.third_party_api.status == 'healthy' %}badge-green{% else %}badge-orange{% endif %}">
+          {{ data.checks.third_party_api.status|upper }}
+        </span>
+      </div>
+      <div style="font-size:13px;color:var(--gray-600);display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span>Strict Timeout Limit:</span>
+          <strong style="color:var(--gray-800);">3.0 seconds</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>API Endpoint:</span>
+          <strong style="color:var(--gray-800);font-size:12px;">dummyjson.com/quotes</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Round-trip Latency:</span>
+          <strong style="color:var(--gray-800);">{{ data.checks.third_party_api.latency_ms }} ms</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Offline Fallback Ready:</span>
+          <strong style="color:#059669;">Yes (Curated Cache)</strong>
+        </div>
+        <div style="margin-top:4px;padding:8px;background:rgba(16,185,129,0.06);border-radius:6px;font-size:12px;color:#047857;">
+          ✓ Automatic graceful degradation ensures zero page delays when upstream network fails.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 4. Recent HTTP Request Logs (Middleware) -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h3 style="font-size:16px;font-weight:700;color:var(--gray-900);">📊 Recent Request Logs</h3>
+        <p style="font-size:13px;color:var(--gray-500);margin:2px 0 0 0;">Captured by RequestLoggingMiddleware for latency & error auditing</p>
+      </div>
+      <span class="badge badge-purple">Last {{ recent_logs|length }} requests</span>
+    </div>
+
+    {% if recent_logs %}
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--gray-200);color:var(--gray-600);">
+            <th style="padding:10px 12px;">Method</th>
+            <th style="padding:10px 12px;">Path</th>
+            <th style="padding:10px 12px;">Status</th>
+            <th style="padding:10px 12px;">Duration</th>
+            <th style="padding:10px 12px;">Client IP</th>
+            <th style="padding:10px 12px;">Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in recent_logs %}
+          <tr style="border-bottom:1px solid var(--gray-100);">
+            <td style="padding:10px 12px;font-weight:700;color:var(--gray-800);">{{ log.method }}</td>
+            <td style="padding:10px 12px;font-family:monospace;color:var(--gray-700);">{{ log.path }}</td>
+            <td style="padding:10px 12px;">
+              <span class="badge {% if log.status_code < 300 %}badge-green{% elif log.status_code < 400 %}badge-blue{% elif log.status_code < 500 %}badge-orange{% else %}badge-red{% endif %}" style="font-size:11px;">
+                {{ log.status_code }}
+              </span>
+            </td>
+            <td style="padding:10px 12px;font-weight:600;color:var(--gray-700);">{{ log.duration_ms }} ms</td>
+            <td style="padding:10px 12px;color:var(--gray-500);">{{ log.ip_address|default:"127.0.0.1" }}</td>
+            <td style="padding:10px 12px;color:var(--gray-500);">{{ log.timestamp|date:"H:i:s" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:24px;color:var(--gray-500);">
+      No request logs captured yet. Navigate through the site to generate logs.
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

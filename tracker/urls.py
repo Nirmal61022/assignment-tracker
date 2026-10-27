@@ -33,4 +33,24 @@ urlpatterns = [
 
     # Calendar
     path('calendar/', views.calendar_view, name='calendar'),
+
+    # FAQs & Error Codes (SQL Database)
+    path('faqs/', views.faq_list, name='faq_list'),
+    path('error-codes/', views.error_code_list, name='error_code_list'),
+
+    # Support Tickets (SQL Database)
+    path('tickets/', views.ticket_list, name='ticket_list'),
+
+    # Health Check & Diagnostics
+    path('health/', views.health_check, name='health_check'),
+
+    # AI Assistant APIs & MongoDB Logging
+    path('api/chat/', views.api_chat, name='api_chat'),
+    path('api/tickets/create/', views.api_ticket_create, name='api_ticket_create'),
+    path('api/feedback/', views.api_feedback, name='api_feedback'),
+    path('api/motivation/', views.api_motivation, name='api_motivation'),
+
+    # Error Page Demos
+    path('test-404/', views.test_404_view, name='test_404'),
+    path('test-500/', views.test_500_view, name='test_500'),
 ]

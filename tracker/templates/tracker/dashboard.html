@@ -20,6 +20,34 @@
 
 {% block content %}
 
+{% if motivation %}
+<!-- Third-Party API Quote / Study Motivation Banner (with fallback resilience) -->
+<div class="card" style="margin-bottom:20px;background:linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.06));border:1px solid rgba(99,102,241,0.2);padding:16px 20px;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+    <div style="display:flex;gap:14px;align-items:flex-start;flex:1;min-width:280px;">
+      <span style="font-size:28px;line-height:1;">💡</span>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--primary);">Daily Study Motivation</span>
+          {% if motivation.is_fallback %}
+            <span class="badge badge-orange" style="font-size:10px;" title="{{ motivation.note }}">Resilient Offline Fallback ({{ motivation.latency_ms }}ms)</span>
+          {% else %}
+            <span class="badge badge-green" style="font-size:10px;">Live Third-Party API ({{ motivation.latency_ms }}ms)</span>
+          {% endif %}
+        </div>
+        <p style="font-size:14px;font-style:italic;color:var(--gray-800);margin:0 0 4px 0;line-height:1.5;">
+          "{{ motivation.quote }}"
+        </p>
+        <span style="font-size:12px;color:var(--gray-500);font-weight:600;">— {{ motivation.author }}</span>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="openAssistantWith('Can you share a tip to improve study productivity?')" style="color:var(--primary);font-weight:600;">
+      🤖 Ask AI for Study Tips
+    </button>
+  </div>
+</div>
+{% endif %}
+
 {% if not has_assignments %}
 <!-- Empty State -->
 <div class="empty-state" style="margin-top:40px">

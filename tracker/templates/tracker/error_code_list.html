@@ -1,0 +1,86 @@
+{% extends 'tracker/base.html' %}
+
+{% block title %}Error Codes Directory – Assignment Tracker{% endblock %}
+{% block page_name %}error_codes{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+  <div>
+    <div class="page-title">⚠️ Error Codes & Diagnostic Directory</div>
+    <div class="page-subtitle">Explanations and resolution guides for standard HTTP errors and our custom site-specific error code</div>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'test_404' %}" class="btn btn-secondary btn-sm" target="_blank">Test 404 Page</a>
+    <a href="{% url 'test_500' %}" class="btn btn-secondary btn-sm" target="_blank">Test 500 Page</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="error-codes-container">
+  <!-- Search -->
+  <div class="card" style="margin-bottom:24px;padding:16px 20px;">
+    <form method="get" style="display:flex;gap:12px;align-items:center;">
+      <div style="flex:1;position:relative;">
+        <input type="text" name="q" value="{{ search }}" placeholder="Search error code (e.g. 404, 500, 488, Unauthorized)..." class="form-input" style="width:100%;padding-left:36px;">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray-400);">🔍</span>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+      {% if search %}
+        <a href="{% url 'error_code_list' %}" class="btn btn-ghost btn-sm">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Error Code Cards Grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));gap:20px;">
+    {% for err in error_codes %}
+      <div class="card" style="border-top:4px solid {% if err.is_custom %}#8b5cf6{% elif err.code >= 500 %}#ef4444{% elif err.code == 404 %}#f59e0b{% else %}#3b82f6{% endif %};display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+            <div>
+              <span style="font-size:28px;font-weight:800;color:var(--gray-900);">{{ err.code }}</span>
+              <h3 style="font-size:16px;font-weight:700;color:var(--gray-800);margin-top:2px;">{{ err.name }}</h3>
+            </div>
+            {% if err.is_custom %}
+              <span class="badge badge-purple" style="font-size:11px;">Site-Specific Custom</span>
+            {% elif err.code >= 500 %}
+              <span class="badge badge-red" style="font-size:11px;">Server Error</span>
+            {% else %}
+              <span class="badge badge-orange" style="font-size:11px;">Client Error</span>
+            {% endif %}
+          </div>
+
+          <p style="font-size:14px;color:var(--gray-600);line-height:1.5;margin-bottom:14px;">
+            {{ err.description }}
+          </p>
+
+          <div style="background:var(--gray-50);border-radius:8px;padding:12px;margin-bottom:12px;font-size:13px;">
+            <strong style="color:var(--gray-800);display:block;margin-bottom:4px;">🔍 Common Causes:</strong>
+            <span style="color:var(--gray-600);">{{ err.common_causes }}</span>
+          </div>
+
+          <div style="background:rgba(16, 185, 129, 0.08);border:1px solid rgba(16, 185, 129, 0.2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;">
+            <strong style="color:#047857;display:block;margin-bottom:4px;">💡 Recommended Solution:</strong>
+            <span style="color:#065f46;">{{ err.solution }}</span>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--gray-100);">
+          <button class="btn btn-ghost btn-sm" onclick="openAssistantForError({{ err.code }})" style="color:var(--primary);font-weight:600;">
+            🤖 Ask Assistant about {{ err.code }} →
+          </button>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openAssistantForError(code) {
+    openAssistantWith('Explain error code ' + code + ' and how to resolve it in Assignment Tracker.');
+  }
+</script>
+{% endblock %}

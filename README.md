@@ -1,192 +1,145 @@
-# Assignment Tracker
+# Assignment Tracker with Integrated AI Assistant & Error Diagnostics
 
-A complete full-stack web application for college students to organize assignments, track deadlines, manage subjects, and monitor submission status.
+A complete full-stack web application designed for college students to organize assignments, track approaching deadlines, manage subjects, and receive instant AI assistance for FAQs, HTTP errors, and support tickets.
 
-Built with **Django 6**, **SQLite** (local), **PostgreSQL** (production), and a responsive vanilla CSS/JS frontend.
+Built with **Python Django 6**, **SQLite / PostgreSQL** (SQL data & support tickets), **MongoDB** (chat logs & user feedback), and a modern, responsive frontend with a persistent floating AI assistant.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Nirmal61022/assignment-tracker)
 
-**GitHub Repository:** [https://github.com/Nirmal61022/assignment-tracker](https://github.com/Nirmal61022/assignment-tracker)
+---
+
+## 📋 Assessment Submission Details
+
+| Field | Detail |
+|-------|--------|
+| **1. Individual Task Title** | College Student Assignment Tracker with Integrated AI Assistant & Error Diagnostics |
+| **2. Live Website Link (HTTPS)** | [https://assignment-tracker-nirmal.onrender.com](https://assignment-tracker-nirmal.onrender.com) *(or your deployed Render URL)* |
+| **3. GitHub Repository Link** | [https://github.com/Nirmal61022/assignment-tracker](https://github.com/Nirmal61022/assignment-tracker) |
 
 ---
 
-## ✨ Features
+## ✅ Assessment Requirements & Feature Matrix
 
-- 📊 **Dashboard** with live statistics, Chart.js status distribution, due-soon list, upcoming deadlines
-- 📝 **Assignment Management** — Create, read, update, delete with full CRUD
-- 🔍 **Search, Filter & Sort** by subject, status, priority, and due date
-- 🚨 **Automatic Overdue Detection** — computed in real-time, never stale
-- ⚠️ **Due-Soon Alerts** — highlights assignments due within 48 hours
-- ✅ **Mark as Submitted** — records exact submission timestamp
-- 📖 **Subject Management** — color-coded subjects with assignment counts
-- 📅 **Calendar / Deadlines View** — chronological upcoming and overdue lists
-- 👤 **User Authentication** — registration, login, logout with full data isolation
-- 📱 **Responsive Design** — works on desktop, tablet, and mobile
-- 🔔 **Toast Notifications** for all actions
-- 🔒 **Security** — CSRF protection, login required, per-user data isolation
+| Requirement | Implementation Detail | Location / Endpoint |
+|-------------|-----------------------|---------------------|
+| **Responsive multi-page website** | 8 responsive pages: Dashboard, Assignments, Calendar, Subjects, Profile, FAQs, Error Codes, Health Diagnostics | `/dashboard/`, `/assignments/`, `/calendar/`, etc. |
+| **Chat widget on every page** | Persistent floating AI assistant widget embedded in `base.html`, accessible anywhere | Fixed bottom-right widget across all pages |
+| **Minimum 10 FAQs in SQL** | 12 comprehensive FAQs stored in SQL database (`FAQ` model) with search & category filters | `/faqs/` |
+| **Minimum 8 Error Codes** | 8 error codes cataloged: 400, 401, 403, 404, 429, 500, 503, and **Custom 488 (Assignment Submission Locked)** | `/error-codes/` |
+| **Custom 404 & 500 pages** | Branded error pages with an interactive **"Ask the assistant"** button that pre-populates error queries | `/test-404/`, `/test-500/`, or any invalid URL |
+| **AI Assistant Capabilities** | Answers from SQL FAQ data, explains all error codes, checks user deadlines, and offers ticket creation | Floating widget on all pages & `/api/chat/` |
+| **Support Tickets in SQL** | `SupportTicket` model in SQL with ticket numbers, statuses, categories, priorities | `/tickets/` & `/api/tickets/create/` |
+| **Chat logs & feedback in MongoDB** | `pymongo` integration saving conversations to `chat_logs` and student ratings to `feedback` (with resilient fallback) | `tracker/mongo.py` & `/api/feedback/` |
+| **Secure API Keys & Env Vars** | All secrets and credentials loaded via `python-decouple` from `.env`; zero secrets in git | `.env.example`, `.gitignore` |
+| **Request Logging & Health Check** | Middleware logging HTTP method, path, status, and duration; `/health/` monitoring SQL, Mongo, and APIs | `tracker/middleware.py` & `/health/` |
+| **Third-Party API with Fallback** | Motivation Quote API with a strict **3.0-second timeout** and automatic offline curated fallback | `tracker/services.py` & Dashboard banner |
+| **Automated Test Suite** | 38 comprehensive automated test cases covering auth, CRUD, FAQs, errors, health, and fallback | `python manage.py test tracker` (38/38 passed) |
+
+---
+
+## 💡 Proposed Improvement
+
+### **Intelligent Calendar Sync (iCal/CalDAV) & Automated Multi-Channel Push Notifications**
+Currently, students monitor deadlines through the in-app dashboard and calendar. A major future enhancement would be providing a dynamic **iCal / CalDAV subscription feed** (`/calendar/feed.ics?token=...`) allowing students to sync assignment deadlines directly with Google Calendar, Apple Calendar, and Outlook. Furthermore, adding **Web Push Notifications** (via Service Workers) and optional email reminders 24 hours before assignment cutoff times will ensure students never miss an urgent submission even when away from the web app.
+
+---
+
+## 🗄️ Database Architecture
+
+### 1. SQL Database (SQLite local / PostgreSQL production)
+* **`Subject`**: Course names, descriptions, and user color badges.
+* **`Assignment`**: Title, subject relation, description, due date, priority, status, submission timestamp, computed `is_overdue` and `due_soon` properties.
+* **`FAQ`**: 12 active student FAQs grouped into categories (Assignments, Deadlines, Subjects, Account, Errors).
+* **`ErrorCode`**: 8 error codes (400, 401, 403, 404, 429, 500, 503, and site-specific 488).
+* **`SupportTicket`**: User-reported or assistant-generated tickets with tracking numbers (`TICK-2026-XXXX`), priority, and resolution status.
+* **`RequestLog`**: HTTP request latency and status audit log captured by middleware.
+
+### 2. NoSQL Database (MongoDB Atlas / Live)
+* **`chat_logs`**: Stores session ID, user ID, user prompt, assistant response, matched FAQ/Error ID, and timestamp.
+* **`feedback`**: Stores student ratings (👍 / 👎) and qualitative comments on AI answers.
+* *Resilience Feature:* If `MONGODB_URI` is omitted or MongoDB is unreachable, the system automatically falls back to an in-memory buffer without interrupting the student experience.
+
+---
+
+## 🤖 AI Assistant Capabilities
+
+1. **FAQ Answering:** Searches the SQL database for relevant answers and presents formatted advice.
+2. **Error Code Explanations:** Explains what HTTP 400-503 or custom 488 mean, lists common causes, and provides step-by-step resolution.
+3. **Student Workload Summary:** Authenticated students can ask "What assignments are overdue?" or "How many assignments do I have?" for instant summaries.
+4. **Automated Ticket Creation:** When a query cannot be answered or when the user requests human assistance, the assistant prompts to create a ticket stored directly in SQL.
+5. **Feedback Loop:** Students can rate answers with thumbs up/down, which is logged into MongoDB.
 
 ---
 
 ## 🚀 Quick Start (Local Development)
 
-### Prerequisites
-- Python 3.10+
-- pip
-
-### Installation
-
+### 1. Clone & Install Dependencies
 ```bash
-# Clone the repository
-git clone <your-repo-url>
-cd assignment_tracker
+git clone https://github.com/Nirmal61022/assignment-tracker.git
+cd assignment-tracker
 
-# Install dependencies
 pip install -r requirements.txt
+```
 
-# Set up environment variables
+### 2. Configure Environment
+```bash
 cp .env.example .env
-# Edit .env with your settings (defaults work for local dev)
+# Edit .env with your desired settings
+```
 
-# Run migrations
+### 3. Run Migrations & Seed Data
+```bash
 python manage.py migrate
-
-# Seed demo data (optional)
 python manage.py seed_demo
-# Demo credentials: username=demo, password=demo123!
+```
+*Demo student credentials:*
+* **Username:** `demo`
+* **Password:** `demo123!`
 
-# Start the development server
+### 4. Run Automated Tests
+```bash
+python manage.py test tracker
+# Output: Ran 38 tests in ~24s ... OK
+```
+
+### 5. Start Development Server
+```bash
 python manage.py runserver
 ```
-
-Then open: **http://127.0.0.1:8000**
-
----
-
-## 🏗️ Project Structure
-
-```
-assignment_tracker/
-├── manage.py
-├── requirements.txt
-├── Procfile              # For Render/Heroku deployment
-├── .env.example          # Environment variable template
-├── .gitignore
-├── README.md
-├── config/
-│   ├── settings.py       # Django settings
-│   ├── urls.py           # Root URL config
-│   ├── wsgi.py
-│   └── asgi.py
-└── tracker/
-    ├── models.py          # Subject, Assignment models
-    ├── views.py           # All views (auth, CRUD, dashboard, etc.)
-    ├── forms.py           # Form classes with validation
-    ├── urls.py            # App URL patterns
-    ├── admin.py           # Admin panel config
-    ├── tests.py           # Automated test suite
-    ├── migrations/        # Database migrations
-    ├── templatetags/
-    │   └── tracker_tags.py # Custom template filters/tags
-    ├── management/
-    │   └── commands/
-    │       └── seed_demo.py # Demo data command
-    ├── templates/tracker/ # All HTML templates
-    │   ├── base.html
-    │   ├── dashboard.html
-    │   ├── assignment_list.html
-    │   ├── assignment_detail.html
-    │   ├── assignment_form.html
-    │   ├── subject_list.html
-    │   ├── calendar.html
-    │   ├── login.html
-    │   ├── register.html
-    │   └── profile.html
-    └── static/tracker/
-        ├── css/style.css  # Complete responsive stylesheet
-        └── js/app.js      # Toast, sidebar, charts, filters
-```
+Visit: **http://127.0.0.1:8000**
 
 ---
 
-## 🗄️ Models
+## 🌐 Deploy to Render
 
-### Subject
-- `user` → ForeignKey(User)
-- `name` → CharField (unique per user)
-- `description` → TextField (optional)
-- `color` → CharField (hex color)
-- `created_at` → DateTimeField
-
-### Assignment
-- `user` → ForeignKey(User)
-- `title` → CharField
-- `subject` → ForeignKey(Subject)
-- `description` → TextField
-- `due_date` → DateField
-- `due_time` → TimeField (optional)
-- `priority` → low / medium / high
-- `status` → pending / in_progress / submitted
-- `submitted_at` → DateTimeField (auto-set on submission)
-- `notes` → TextField
-- `created_at`, `updated_at` → DateTimeField
-
-**Computed properties** (not stored): `is_overdue`, `effective_status`, `due_soon`
+1. Click the **Deploy to Render** button above or link your GitHub repository on [dashboard.render.com](https://dashboard.render.com).
+2. Use the provided [`render.yaml`](render.yaml) blueprint or configure a Web Service:
+   * **Build Command:** `./build.sh`
+   * **Start Command:** `gunicorn config.wsgi:application`
+3. Environment variables:
+   * `SECRET_KEY`: *(Auto-generated)*
+   * `DEBUG`: `False`
+   * `ALLOWED_HOSTS`: `.onrender.com,localhost,127.0.0.1`
+   * `CSRF_TRUSTED_ORIGINS`: `https://*.onrender.com`
+   * `DATABASE_URL`: *(PostgreSQL connection string)*
+   * `MONGODB_URI`: *(Optional: MongoDB Atlas connection string)*
+   * `GEMINI_API_KEY`: *(Optional: Google Gemini API key)*
 
 ---
 
-## 🧪 Running Tests
+## 🧪 Verified Tests (38/38 Passing)
 
-```bash
-python manage.py test tracker --verbosity=2
-```
-
-Tests cover:
-- Authentication (register, login, logout, access control)
-- Subject CRUD and delete-with-assignments guard
-- Assignment CRUD, search, filter, mark-submitted
-- Cross-user data isolation (returns 404)
-- Model properties (is_overdue, due_soon)
-
----
-
-## 🌐 Deployment (Render)
-
-1. Push to GitHub
-2. Create a new **Web Service** on [Render](https://render.com)
-3. Set **Build Command**: `pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate`
-4. Set **Start Command**: `gunicorn config.wsgi:application`
-5. Add environment variables:
-   - `SECRET_KEY` = (generate a random key)
-   - `DEBUG` = `False`
-   - `ALLOWED_HOSTS` = `your-app.onrender.com`
-   - `DATABASE_URL` = (Render PostgreSQL connection string)
-   - `CSRF_TRUSTED_ORIGINS` = `https://your-app.onrender.com`
-
-### Generating a Secret Key
-```python
-python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-```
-
----
-
-## 🔐 Default Demo Credentials
-
-After running `python manage.py seed_demo`:
-- **Username:** `demo`
-- **Password:** `demo123!`
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Backend | Django 6 |
-| Database (local) | SQLite |
-| Database (production) | PostgreSQL |
-| Frontend | HTML5, CSS3, Vanilla JS |
-| Charts | Chart.js 4 |
-| Icons | Emoji (universal, no deps) |
-| Static files | Whitenoise |
-| WSGI server | Gunicorn |
-| Config | python-decouple, dj-database-url |
+* `test_minimum_10_faqs_in_sql` — Passed
+* `test_minimum_8_error_codes` — Passed (400, 401, 403, 404, 429, 500, 503, 488)
+* `test_custom_site_specific_error_code_exists` — Passed
+* `test_custom_404_view_rendered` — Passed (includes "Ask the Assistant")
+* `test_custom_500_view_rendered` — Passed (includes "Ask the Assistant")
+* `test_assistant_explains_error_404` — Passed
+* `test_assistant_explains_custom_error_488` — Passed
+* `test_assistant_answers_from_sql_faq` — Passed
+* `test_assistant_suggests_ticket_when_unanswered` — Passed
+* `test_support_ticket_creation_in_sql` — Passed
+* `test_health_check_html` & `test_health_check_json` — Passed
+* `test_third_party_motivation_service_with_fallback` — Passed
+* `test_register_login_logout` — Passed
+* `test_assignment_crud_and_overdue` — Passed

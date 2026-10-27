@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>500 - Internal Server Error | Assignment Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --danger: #ef4444;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .error-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      max-width: 560px;
+      width: 100%;
+      padding: 40px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      background: #fee2e2;
+      color: #b91c1c;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .error-code {
+      font-size: 84px;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--danger);
+      margin-bottom: 12px;
+    }
+    .error-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    .error-description {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+    .actions-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    @media (min-width: 480px) {
+      .actions-grid {
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-assistant {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid var(--border);
+    }
+    .btn-assistant:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .assistant-popup {
+      margin-top: 24px;
+      padding: 16px;
+      background: #f8fafc;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+    .assistant-avatar {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-container">
+    <div class="badge">HTTP Error 500</div>
+    <div class="error-code">500</div>
+    <h1 class="error-title">Internal Server Error</h1>
+    <p class="error-description">
+      Something went wrong on our servers while fulfilling your request. Our system monitoring middleware has logged this event.
+    </p>
+
+    <div class="actions-grid">
+      <a href="/dashboard/" class="btn btn-primary">
+        🏠 Return to Dashboard
+      </a>
+      <button class="btn btn-assistant" onclick="askAssistantAbout500()">
+        🤖 Ask the Assistant
+      </button>
+    </div>
+
+    <div class="assistant-popup">
+      <div class="assistant-avatar">🤖</div>
+      <div>
+        <strong>Have the assistant file a report:</strong>
+        <p style="margin-top:2px;">Click "Ask the Assistant" to immediately explain error 500 and create a priority support ticket for the engineering team.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function askAssistantAbout500() {
+      sessionStorage.setItem('open_assistant_with', 'Explain error 500: An unexpected internal server error occurred while processing my request.');
+      sessionStorage.setItem('assistant_context_code', '500');
+      window.location.href = '/dashboard/?ask=500';
+    }
+  </script>
+</body>
+</html>

@@ -8,3 +8,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('tracker.urls')),
 ]
+
+handler404 = 'tracker.views.custom_404_view'
+handler500 = 'tracker.views.custom_500_view'
+

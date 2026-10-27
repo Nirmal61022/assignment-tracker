@@ -131,3 +131,111 @@ class Assignment(models.Model):
         self.status = self.STATUS_SUBMITTED
         self.submitted_at = timezone.now()
         self.save(update_fields=['status', 'submitted_at', 'updated_at'])
+
+
+class FAQ(models.Model):
+    """Frequently Asked Question stored in SQL database."""
+    CATEGORY_CHOICES = [
+        ('Assignments', 'Assignments'),
+        ('Deadlines', 'Deadlines & Overdue'),
+        ('Subjects', 'Subjects & Courses'),
+        ('Account', 'Account & Security'),
+        ('Errors', 'Errors & Troubleshooting'),
+    ]
+
+    question = models.CharField(max_length=300)
+    answer = models.TextField()
+    category = models.CharField(max_length=100, choices=CATEGORY_CHOICES, default='Assignments')
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = 'FAQ'
+        verbose_name_plural = 'FAQs'
+
+    def __str__(self):
+        return f"[{self.category}] {self.question}"
+
+
+class ErrorCode(models.Model):
+    """HTTP & Site-specific error code catalog for AI assistant and user guide."""
+    code = models.IntegerField(unique=True)
+    name = models.CharField(max_length=200)
+    description = models.TextField()
+    common_causes = models.TextField(help_text="Typical reasons this error occurs.")
+    solution = models.TextField(help_text="Recommended steps for students to resolve it.")
+    is_custom = models.BooleanField(default=False, help_text="True if this is an Assignment Tracker custom error code.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['code']
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
+class SupportTicket(models.Model):
+    """Support ticket created when assistant cannot resolve an issue or upon user request."""
+    STATUS_OPEN = 'open'
+    STATUS_IN_PROGRESS = 'in_progress'
+    STATUS_RESOLVED = 'resolved'
+    STATUS_CLOSED = 'closed'
+    STATUS_CHOICES = [
+        (STATUS_OPEN, 'Open'),
+        (STATUS_IN_PROGRESS, 'In Progress'),
+        (STATUS_RESOLVED, 'Resolved'),
+        (STATUS_CLOSED, 'Closed'),
+    ]
+
+    PRIORITY_LOW = 'low'
+    PRIORITY_MEDIUM = 'medium'
+    PRIORITY_HIGH = 'high'
+    PRIORITY_URGENT = 'urgent'
+    PRIORITY_CHOICES = [
+        (PRIORITY_LOW, 'Low'),
+        (PRIORITY_MEDIUM, 'Medium'),
+        (PRIORITY_HIGH, 'High'),
+        (PRIORITY_URGENT, 'Urgent'),
+    ]
+
+    ticket_number = models.CharField(max_length=32, unique=True)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='support_tickets')
+    email = models.EmailField()
+    subject = models.CharField(max_length=255)
+    description = models.TextField()
+    category = models.CharField(max_length=100, default='General Support')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_OPEN)
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM)
+    source = models.CharField(max_length=50, default='assistant')  # 'assistant', 'error_page', 'form'
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.ticket_number} - {self.subject} ({self.get_status_display()})"
+
+
+class RequestLog(models.Model):
+    """Request log entry for monitoring, analytics, and health check diagnostics."""
+    method = models.CharField(max_length=10)
+    path = models.CharField(max_length=500)
+    status_code = models.IntegerField()
+    duration_ms = models.FloatField()
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=300, blank=True, default='')
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['-timestamp']),
+            models.Index(fields=['status_code']),
+        ]
+
+    def __str__(self):
+        return f"{self.method} {self.path} -> {self.status_code} ({self.duration_ms:.1f}ms)"
+

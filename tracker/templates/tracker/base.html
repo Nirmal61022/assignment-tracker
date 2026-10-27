@@ -48,6 +48,20 @@
           <span class="nav-icon">📅</span> Calendar
         </a>
 
+        <div class="nav-section-label">Support & Diagnostics</div>
+        <a href="{% url 'faq_list' %}" class="nav-item {% if request.resolver_match.url_name == 'faq_list' %}active{% endif %}">
+          <span class="nav-icon">❓</span> FAQs
+        </a>
+        <a href="{% url 'error_code_list' %}" class="nav-item {% if request.resolver_match.url_name == 'error_code_list' %}active{% endif %}">
+          <span class="nav-icon">⚠️</span> Error Codes
+        </a>
+        <a href="{% url 'ticket_list' %}" class="nav-item {% if request.resolver_match.url_name == 'ticket_list' %}active{% endif %}">
+          <span class="nav-icon">🎫</span> Support Tickets
+        </a>
+        <a href="{% url 'health_check' %}" class="nav-item {% if request.resolver_match.url_name == 'health_check' %}active{% endif %}">
+          <span class="nav-icon">🩺</span> System Health
+        </a>
+
         <div class="nav-section-label">Account</div>
         <a href="{% url 'profile' %}" class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
           <span class="nav-icon">👤</span> Profile
@@ -128,6 +142,557 @@
         document.getElementById('delete-form').action = btn.dataset.deleteAction;
         openModal('delete-modal');
       });
+    });
+  </script>
+
+  <!-- ================================================================ -->
+  <!-- FLOATING AI ASSISTANT CHAT WIDGET (Available on every page)         -->
+  <!-- ================================================================ -->
+  <div id="ai-assistant-widget" class="ai-widget-container">
+    <!-- Collapsed Floating Button -->
+    <button id="ai-widget-trigger" class="ai-widget-bubble" onclick="toggleAssistant()" aria-label="Open AI Assistant">
+      <span class="ai-bubble-icon">🤖</span>
+      <span class="ai-bubble-label">Ask Assistant</span>
+      <span class="ai-online-dot" title="Assistant Online"></span>
+    </button>
+
+    <!-- Expanded Chat Window -->
+    <div id="ai-chat-window" class="ai-chat-window" style="display:none;">
+      <!-- Header -->
+      <div class="ai-chat-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="ai-header-avatar">🤖</div>
+          <div>
+            <div class="ai-header-title">Student AI Assistant</div>
+            <div class="ai-header-status">
+              <span class="status-pulse-dot"></span> Online • SQL FAQs & Error DB
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="ai-header-btn" onclick="resetAssistantSession()" title="New Chat Session">🔄</button>
+          <button class="ai-header-btn" onclick="toggleAssistant()" title="Close Assistant">✕</button>
+        </div>
+      </div>
+
+      <!-- Quick Action Chips -->
+      <div class="ai-chips-bar">
+        <button class="ai-chip" onclick="sendQuickPrompt('Explain error 404')">Explain 404</button>
+        <button class="ai-chip" onclick="sendQuickPrompt('Explain site-specific code 488')">Custom 488</button>
+        <button class="ai-chip" onclick="sendQuickPrompt('How are overdue calculated?')">Overdue Rules</button>
+        <button class="ai-chip" onclick="openInlineTicketForm()">🎫 Open Ticket</button>
+      </div>
+
+      <!-- Messages Stream -->
+      <div id="ai-messages-list" class="ai-messages-list">
+        <!-- Initial Welcome Message -->
+        <div class="ai-message ai-message-assistant">
+          <div class="ai-msg-avatar">🤖</div>
+          <div class="ai-msg-content">
+            <p><strong>Hi there!</strong> I am your integrated Assignment Tracker AI Assistant.</p>
+            <p style="margin-top:4px;">I can answer questions from our SQL FAQ database, diagnose HTTP & site-specific error codes (400, 404, 500, 488), check your assignment deadlines, or create official support tickets.</p>
+            <p style="margin-top:4px;font-size:12px;color:var(--gray-500);">What can I assist you with today?</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inline Support Ticket Form (hidden by default) -->
+      <div id="ai-ticket-panel" class="ai-ticket-panel" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="font-size:13px;color:var(--gray-900);">🎫 Create Support Ticket (SQL)</strong>
+          <button type="button" onclick="closeInlineTicketForm()" style="background:none;border:none;cursor:pointer;font-size:14px;">✕</button>
+        </div>
+        <input type="text" id="ai-ticket-subject" class="form-input" placeholder="Ticket Subject..." style="font-size:12px;padding:6px 10px;margin-bottom:6px;">
+        <textarea id="ai-ticket-desc" class="form-input" rows="2" placeholder="Describe the issue..." style="font-size:12px;padding:6px 10px;margin-bottom:6px;"></textarea>
+        <button type="button" class="btn btn-primary btn-sm" onclick="submitInlineTicket()" style="width:100%;justify-content:center;">
+          Submit Ticket to SQL Database
+        </button>
+      </div>
+
+      <!-- Input Bar -->
+      <form id="ai-chat-form" onsubmit="handleAssistantSubmit(event)" class="ai-input-form">
+        <input type="text" id="ai-user-input" class="ai-input-field" placeholder="Ask about FAQs, error codes, or assignments..." autocomplete="off">
+        <button type="submit" id="ai-send-btn" class="ai-send-btn" title="Send Message">➤</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Assistant Styles -->
+  <style>
+    .ai-widget-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      font-family: inherit;
+    }
+    .ai-widget-bubble {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      padding: 12px 18px;
+      border-radius: 9999px;
+      border: none;
+      box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4), 0 8px 10px -6px rgba(99, 102, 241, 0.2);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    .ai-widget-bubble:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 14px 28px -5px rgba(99, 102, 241, 0.5);
+    }
+    .ai-bubble-icon { font-size: 20px; }
+    .ai-bubble-label { font-weight: 700; font-size: 14px; }
+    .ai-online-dot {
+      width: 10px;
+      height: 10px;
+      background: #10b981;
+      border: 2px solid white;
+      border-radius: 50%;
+      position: absolute;
+      top: 6px;
+      right: 8px;
+    }
+    .ai-chat-window {
+      width: 380px;
+      max-width: calc(100vw - 32px);
+      height: 540px;
+      max-height: calc(100vh - 100px);
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0,0,0,0.08);
+      border: 1px solid var(--gray-200);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: aiSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes aiSlideUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .ai-chat-header {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ai-header-avatar {
+      font-size: 22px;
+      width: 36px;
+      height: 36px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ai-header-title { font-weight: 700; font-size: 14px; }
+    .ai-header-status { font-size: 11px; opacity: 0.9; display: flex; align-items: center; gap: 4px; }
+    .status-pulse-dot {
+      width: 7px;
+      height: 7px;
+      background: #34d399;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .ai-header-btn {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ai-header-btn:hover { background: rgba(255,255,255,0.3); }
+    .ai-chips-bar {
+      display: flex;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .ai-chip {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 9999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-700);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ai-chip:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .ai-messages-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .ai-message {
+      display: flex;
+      gap: 10px;
+      max-width: 90%;
+    }
+    .ai-message-user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .ai-message-assistant {
+      align-self: flex-start;
+    }
+    .ai-msg-avatar {
+      font-size: 18px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .ai-msg-content {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--gray-800);
+    }
+    .ai-message-user .ai-msg-content {
+      background: var(--primary);
+      color: white;
+      border: none;
+    }
+    .ai-msg-actions {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+    .ai-feedback-btn {
+      background: none;
+      border: 1px solid var(--gray-200);
+      border-radius: 4px;
+      padding: 2px 6px;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--gray-600);
+    }
+    .ai-feedback-btn:hover { background: var(--gray-100); }
+    .ai-ticket-panel {
+      padding: 12px 14px;
+      background: #eff6ff;
+      border-top: 1px solid #bfdbfe;
+    }
+    .ai-input-form {
+      display: flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-top: 1px solid var(--gray-200);
+      background: white;
+      gap: 8px;
+    }
+    .ai-input-field {
+      flex: 1;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+    }
+    .ai-input-field:focus { border-color: var(--primary); }
+    .ai-send-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .ai-send-btn:hover { background: var(--primary-dark, #4f46e5); }
+
+    /* Mobile Responsive Docking */
+    @media (max-width: 480px) {
+      .ai-widget-container {
+        bottom: 16px;
+        right: 16px;
+      }
+      .ai-chat-window {
+        width: calc(100vw - 32px);
+        height: 75vh;
+        bottom: 0;
+        right: 0;
+      }
+    }
+  </style>
+
+  <!-- Assistant Interactive Logic -->
+  <script>
+    let assistantSessionId = localStorage.getItem('ai_session_id') || ('sess_' + Math.random().toString(36).substring(2, 10));
+    localStorage.setItem('ai_session_id', assistantSessionId);
+
+    function toggleAssistant() {
+      const bubble = document.getElementById('ai-widget-trigger');
+      const win = document.getElementById('ai-chat-window');
+      if (win.style.display === 'none' || !win.style.display) {
+        win.style.display = 'flex';
+        bubble.style.display = 'none';
+        document.getElementById('ai-user-input').focus();
+      } else {
+        win.style.display = 'none';
+        bubble.style.display = 'flex';
+      }
+    }
+
+    function resetAssistantSession() {
+      assistantSessionId = 'sess_' + Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('ai_session_id', assistantSessionId);
+      const list = document.getElementById('ai-messages-list');
+      list.innerHTML = `
+        <div class="ai-message ai-message-assistant">
+          <div class="ai-msg-avatar">🤖</div>
+          <div class="ai-msg-content">
+            <p><strong>Chat session reset.</strong> How can I help you today? You can ask about FAQs, HTTP error codes (400-503, 488), or your assignments.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function sendQuickPrompt(text) {
+      document.getElementById('ai-user-input').value = text;
+      handleAssistantSubmit(new Event('submit'));
+    }
+
+    function openAssistantWith(query) {
+      const win = document.getElementById('ai-chat-window');
+      const bubble = document.getElementById('ai-widget-trigger');
+      win.style.display = 'flex';
+      bubble.style.display = 'none';
+      document.getElementById('ai-user-input').value = query;
+      handleAssistantSubmit(new Event('submit'));
+    }
+
+    function openInlineTicketForm(prefillSubject, prefillDesc) {
+      const panel = document.getElementById('ai-ticket-panel');
+      panel.style.display = 'block';
+      if (prefillSubject) document.getElementById('ai-ticket-subject').value = prefillSubject;
+      if (prefillDesc) document.getElementById('ai-ticket-desc').value = prefillDesc;
+      document.getElementById('ai-ticket-subject').focus();
+    }
+
+    function closeInlineTicketForm() {
+      document.getElementById('ai-ticket-panel').style.display = 'none';
+    }
+
+    async function submitInlineTicket() {
+      const subject = document.getElementById('ai-ticket-subject').value.trim();
+      const description = document.getElementById('ai-ticket-desc').value.trim();
+      if (!description) {
+        alert('Please describe your issue.');
+        return;
+      }
+
+      try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const res = await fetch('/api/tickets/create/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({
+            subject: subject || 'AI Assistant Support Ticket',
+            description: description,
+            source: 'assistant'
+          })
+        });
+
+        const data = await res.json();
+        closeInlineTicketForm();
+        appendAssistantMessage(
+          `✅ **Support Ticket Created in SQL!**\n\nTicket Number: \`${data.ticket_number}\`\n\n${data.message}\n\nYou can track this under [Support Tickets](/tickets/).`
+        );
+      } catch (err) {
+        alert('Failed to create ticket: ' + err);
+      }
+    }
+
+    async function submitFeedback(messageId, rating, btnElem) {
+      try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        await fetch('/api/feedback/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({
+            session_id: assistantSessionId,
+            message_id: messageId,
+            rating: rating
+          })
+        });
+
+        const parent = btnElem.parentElement;
+        parent.innerHTML = `<span style="color:#059669;">✓ Thanks for feedback (saved to MongoDB)</span>`;
+      } catch (err) {
+        console.error('Feedback failed:', err);
+      }
+    }
+
+    function appendUserMessage(text) {
+      const list = document.getElementById('ai-messages-list');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'ai-message ai-message-user';
+      msgDiv.innerHTML = `<div class="ai-msg-content">${escapeHtml(text)}</div>`;
+      list.appendChild(msgDiv);
+      list.scrollTop = list.scrollHeight;
+    }
+
+    function appendAssistantMessage(text, messageId, canCreateTicket) {
+      const list = document.getElementById('ai-messages-list');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'ai-message ai-message-assistant';
+
+      let formattedText = formatMarkdown(text);
+      let actionsHtml = '';
+
+      if (messageId) {
+        actionsHtml = `
+          <div class="ai-msg-actions">
+            <span style="color:var(--gray-400);">Helpful?</span>
+            <button class="ai-feedback-btn" onclick="submitFeedback('${messageId}', 'up', this)">👍 Yes</button>
+            <button class="ai-feedback-btn" onclick="submitFeedback('${messageId}', 'down', this)">👎 No</button>
+            ${canCreateTicket ? `<button class="ai-feedback-btn" style="color:var(--primary);font-weight:700;" onclick="openInlineTicketForm('Support Request', '${escapeHtml(text).substring(0, 80)}')">🎫 Open Support Ticket</button>` : ''}
+          </div>
+        `;
+      }
+
+      msgDiv.innerHTML = `
+        <div class="ai-msg-avatar">🤖</div>
+        <div class="ai-msg-content">
+          ${formattedText}
+          ${actionsHtml}
+        </div>
+      `;
+      list.appendChild(msgDiv);
+      list.scrollTop = list.scrollHeight;
+    }
+
+    async function handleAssistantSubmit(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('ai-user-input');
+      const query = input.value.trim();
+      if (!query) return;
+
+      appendUserMessage(query);
+      input.value = '';
+
+      // Typing indicator
+      const list = document.getElementById('ai-messages-list');
+      const typingDiv = document.createElement('div');
+      typingDiv.id = 'ai-typing-indicator';
+      typingDiv.className = 'ai-message ai-message-assistant';
+      typingDiv.innerHTML = `
+        <div class="ai-msg-avatar">🤖</div>
+        <div class="ai-msg-content" style="color:var(--gray-400);font-style:italic;">Consulting SQL FAQs & Error catalog...</div>
+      `;
+      list.appendChild(typingDiv);
+      list.scrollTop = list.scrollHeight;
+
+      try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const contextCode = sessionStorage.getItem('assistant_context_code') || '';
+        sessionStorage.removeItem('assistant_context_code');
+
+        const res = await fetch('/api/chat/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({
+            message: query,
+            session_id: assistantSessionId,
+            context_code: contextCode
+          })
+        });
+
+        const data = await res.json();
+        const typing = document.getElementById('ai-typing-indicator');
+        if (typing) typing.remove();
+
+        appendAssistantMessage(data.reply, data.message_id, data.can_create_ticket);
+      } catch (err) {
+        const typing = document.getElementById('ai-typing-indicator');
+        if (typing) typing.remove();
+        appendAssistantMessage('⚠️ Connection error to AI service. Please verify your connection or try again.');
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatMarkdown(text) {
+      let html = escapeHtml(text);
+      // bold
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      // code
+      html = html.replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.06);padding:2px 4px;border-radius:4px;">$1</code>');
+      // headers
+      html = html.replace(/### (.*?)\n/g, '<h4 style="font-weight:700;margin:6px 0 4px 0;">$1</h4>');
+      // links
+      html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" style="color:#6366f1;text-decoration:underline;">$1</a>');
+      // line breaks
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    }
+
+    // Auto-open if redirected from 404/500 pages or URL ?ask=
+    window.addEventListener('DOMContentLoaded', function() {
+      const storedQuery = sessionStorage.getItem('open_assistant_with');
+      if (storedQuery) {
+        sessionStorage.removeItem('open_assistant_with');
+        openAssistantWith(storedQuery);
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        const askParam = params.get('ask');
+        if (askParam) {
+          openAssistantWith('Explain error code ' + askParam);
+        }
+      }
     });
   </script>
 
